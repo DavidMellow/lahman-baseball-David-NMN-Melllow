@@ -18,7 +18,10 @@
     MAX, LIMIT
 
     DESCRIPTION ::
-        ...
+    Created temporary table of Vanderbilt players first and last names.
+	Joined salaries, summmed salaries and grouped by names to get individual total earnings.
+	Last script (commented out) verifies the the 9 player difference between the temp table 
+	and combined table before the LIMIT is due to null salary values
 
     ANSWER ::
        David Price
