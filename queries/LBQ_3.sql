@@ -43,7 +43,7 @@ FROM vandy --24 */
 /*SELECT COUNT (DISTINCT playerid)
 FROM collegeplaying
 WHERE collegeplaying.schoolid ILIKE '%Vand%'; --24 checks */
-SELECT 
+/*SELECT 
 	DISTINCT full_name,
 	SUM(salary) AS total_salary_earn
 FROM salaries
@@ -51,14 +51,13 @@ JOIN vandy
 ON salaries.playerid = vandy.playerid
 GROUP BY full_name
 ORDER BY total_salary_earn DESC
-LIMIT 1;
-/*SELECT 
-	DISTINCT collegeplaying.playerid,
+LIMIT 1;*/
+SELECT
+	DISTINCT full_name,
 	SUM(salary) AS total_salary_earn
-FROM collegeplaying
+FROM vandy
+FULL OUTER JOIN salaries
+ON vandy.playerid = salaries.playerid
+GROUP BY full_name
+HAVING SUM(salary) IS NULL;--trying to see why 24 Vandy players but only 15 with salaries
 
-JOIN salaries
-ON collegeplaying.playerid = salaries.playerid
-WHERE collegeplaying.schoolid ILIKE '%Vand%'
-GROUP BY collegeplaying.playerid
-ORDER BY total-salary_earn DESC;*/ --trying to see why 24 Vandy players but only 15 with salaries
