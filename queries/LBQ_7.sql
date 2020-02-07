@@ -9,67 +9,110 @@
 	What percentage of the time?
 	
     SOURCES ::
-	teams (franchid,yearid, w, wswin,)
-	teamsfranchises (franchid,franchname)
+	teams (yearid, w, wswins)
 
     DIMENSIONS ::
-    team name
-
+    world series winner/ most wins and world series win  
+	from 1970
     FACTS ::
-     wins, pct
+     wins/count/pct
 
     FILTERS ::
-        * ...
+    MAX, MIN, CASE, SUM, COUNT
 
     DESCRIPTION ::
-        ...
+     Created temporary table
 
     ANSWER ::
-    From 1976-2016 the most wins for a team that did not win the World Series was 116.
-	From 1976-2016 the fewest wins for a team that did win the World Series was 63 in 1981,
+    From 1970-2016 the most wins for a team that did not win the World Series was 116.
+	From 1970-2016 the fewest wins for a team that did win the World Series was 63 in 1981,
 	a seaon shortened by the player's strike.
 	If we exclude 1981, the fewest wins for a team that won the World Series is 83.
+	From 1970-2016 the team with most won the World Series 12 times, or 26% of the time. 
+	This excludes the 1981 strike shortened season and the 1994 season which did not have a World Series.
 */
 
-DROP TABLE IF EXISTS seasons_max_w_wsr;
+/*SELECT --Answer part 1
+	yearid,
+	teamid,
+	MAX(w) AS most_wins,
+	wswin
+FROM teams
+GROUP BY  yearid, teamid, w, wswin
+HAVING yearid >= '1970' AND yearid <= '2016' AND wswin = 'N'
+ORDER BY most_wins DESC
+LIMIT 1;*/ --SEA 116 wins, lost WS
 
-CREATE TEMP TABLE seasons_max_w_wsr AS
-	SELECT 
-	 	t.yearid, 
-		t.teamid,
-		t.w,
-		MAX(t.w) AS max_wins, 
-		t.wswin
-	 FROM teams AS t
-	 GROUP BY t.yearid, t.teamid, t.w, t.wswin
-	 HAVING t.w = MAX(t.w) AND yearid BETWEEN '1976' AND '2016'
-	 ORDER BY t.yearid;
-SELECT *
-FROM seasons_max_w_wsr;
-	 
-	 
-/*SELECT
-	 (SELECT
-		MAX(t.w) AS max_gw_wsl
-	 	FROM teams as t
-	 	WHERE t.wswin = 'N' AND yearid >= '1976' AND yearid <= '2016') AS max_gw_wsl,--116 
-	 (SELECT
-		MIN(t.w) AS min_gw_wsw
-	 	FROM teams as t
-	 	WHERE t.wswin = 'Y' AND yearid >= '1976' AND yearid <= '2016' AND yearid != '1981') AS min_gw_wsl,--83
-FROM teams AS t*/
+/*SELECT --Answer part 2
+	yearid,
+	teamid,
+	MIN(w) AS fewest_wins,
+	wswin
+FROM teams
+GROUP BY  yearid, teamid, w, wswin
+HAVING yearid >= '1970' AND yearid <= '2016' AND yearid != '1981' AND wswin = 'Y'
+ORDER BY fewest_wins
+LIMIT 1;*/ -- lowest wins 1981 LAN 63 wins, next lowest 2006 SLN with 83
 
-/*JOIN teamsfranchises AS tf
-ON t.franchid = tf.franchid
-WHERE yearid >= '1976' AND yearid <= '2016';*/
+--Answer Parts 1,2, and 3
 
-/*SELECT 
-	t.yearid, 
-	tf.franchname, 
-	t.w,
-	t.g,
-	t.wswin
-FROM teams as t
-JOIN teamsfranchises AS tf
-ON t.franchid = tf.franchid
-WHERE yearid >= '1976' AND yearid <= '2016' AND t.wswin = 'Y'; */-- lowest wins 1981 LAD 63 wins, next lowest 2006 StL 
+DROP TABLE IF EXISTS wsr_mw;
+
+CREATE TEMP TABLE wsr_mw AS
+WITH max_w AS(
+		SELECT 
+ 			yearid,
+			MAX(w) AS most_wins
+			--wswin
+		FROM teams
+		GROUP BY yearid, wswin 
+		HAVING yearid >='1970' AND yearid <= '2016' AND yearid != '1994' AND yearid != '1981' AND wswin = 'Y'
+		ORDER BY yearid),
+	max_l AS(
+		SELECT 
+ 			yearid,
+			MAX(w) AS most_wins
+			--wswin
+		FROM teams
+		GROUP BY yearid, wswin 
+		HAVING yearid >='1970' AND yearid <= '2016' AND yearid != '1994' AND yearid != '1981' AND wswin = 'N'
+		ORDER BY yearid) 
+SELECT	
+	t.yearid,
+	MAX(w) AS wins,
+	(CASE 
+		WHEN max_w.most_wins >= max_l.most_wins THEN 1
+		WHEN max_w.most_wins < max_l.most_wins THEN 0
+		END) AS wsr
+FROM teams AS t
+JOIN max_w
+ON t.yearid = max_w.yearid
+JOIN max_l
+ON max_w.yearid = max_l.yearid
+GROUP BY t.yearid, wsr
+ORDER BY yearid;
+
+/*SELECT *
+FROM wsr_mw;*/ --check output
+
+SELECT
+(SELECT
+	MAX(wins)  
+	FROM wsr_mw
+	WHERE wsr =0) AS mw_wsl,
+(SELECT 
+	MIN(w) AS fewest_wins
+	FROM teams
+	GROUP BY yearid, wswin
+	HAVING yearid >= '1970' AND yearid <= '2016' AND yearid != '1981' AND wswin = 'Y'
+	ORDER BY fewest_wins
+	LIMIT 1) AS lw_wsw,
+SUM(wsr) AS mw_wsw_count,
+100 * SUM(wsr)/COUNT(wsr) AS pct_mw_wsw_
+FROM wsr_mw;
+
+
+
+
+
+		 
